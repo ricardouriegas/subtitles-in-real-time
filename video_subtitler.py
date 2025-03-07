@@ -53,15 +53,16 @@ class VideoSubtitler:
             
             while self.is_running:
                 try:
-                    print("Listening...")
+                    print("Escuchando...")
                     audio = self.recognizer.listen(source, timeout=5, phrase_time_limit=10)
                     
                     current_time = datetime.now() - self.start_time
                     start_time_str = str(timedelta(seconds=int(current_time.total_seconds())))
                     
                     try:
-                        text = self.recognizer.recognize_google(audio)
-                        print(f"Subtitle: {text}")
+                        # Changed to Spanish language recognition
+                        text = self.recognizer.recognize_google(audio, language="es-ES")
+                        print(f"Subtítulo: {text}")
                         
                         end_time = datetime.now() - self.start_time
                         end_time_str = str(timedelta(seconds=int(end_time.total_seconds())))
@@ -76,12 +77,12 @@ class VideoSubtitler:
                         subtitle_count += 1
                         
                     except sr.UnknownValueError:
-                        print("Could not understand audio")
+                        print("No se pudo entender el audio")
                     except sr.RequestError as e:
-                        print(f"Could not request results; {e}")
+                        print(f"No se pudo obtener resultados; {e}")
                         
                 except Exception as e:
-                    print(f"Error in audio processing: {e}")
+                    print(f"Error en el procesamiento de audio: {e}")
     
     def record_video(self):
         try:
@@ -138,8 +139,8 @@ class VideoSubtitler:
         # Show the save file dialog
         output_path = filedialog.asksaveasfilename(
             defaultextension=".mp4",
-            filetypes=[("MP4 files", "*.mp4"), ("All files", "*.*")],
-            title="Save Video with Subtitles"
+            filetypes=[("Archivos MP4", "*.mp4"), ("Todos los archivos", "*.*")],
+            title="Guardar Video con Subtítulos"
         )
         
         if output_path:
@@ -155,9 +156,9 @@ class VideoSubtitler:
             
             try:
                 subprocess.run(cmd, check=True)
-                print(f"Video with subtitles saved to: {output_path}")
+                print(f"Video con subtítulos guardado en: {output_path}")
             except subprocess.CalledProcessError as e:
-                print(f"Error saving video with subtitles: {e}")
+                print(f"Error al guardar el video con subtítulos: {e}")
     
     def cleanup(self):
         if self.video_capture:
@@ -181,8 +182,8 @@ class VideoSubtitler:
             print(f"Error cleaning up temp files: {e}")
 
 if __name__ == "__main__":
-    print("Starting Video Subtitler...")
-    print("Press 'q' to stop recording and save the video.")
+    print("Iniciando Subtitulador de Video...")
+    print("Presiona 'q' para detener la grabación y guardar el video.")
     
     subtitler = VideoSubtitler()
     subtitler.start_recording()
