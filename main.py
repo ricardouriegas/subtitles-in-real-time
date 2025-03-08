@@ -89,13 +89,9 @@ def record_audio():
                     input=True,
                     frames_per_buffer=CHUNK)
     
-    print("Grabando audio...")
-    
     while is_recording:
         data = stream.read(CHUNK)
         audio_frames.append(data)
-    
-    print("Grabación de audio finalizada.")
     
     stream.stop_stream()
     stream.close()
@@ -113,8 +109,6 @@ def start_recording(frame):
     # Iniciar grabación de audio en un hilo separado
     audio_thread = threading.Thread(target=record_audio)
     audio_thread.start()
-    
-    print("Grabación iniciada. Presiona 'r' nuevamente para detener y guardar.")
 
 def stop_recording_and_save():
     """Detiene la grabación y abre diálogo para guardar usando PyQt6"""
@@ -158,7 +152,6 @@ def stop_recording_and_save():
     if len(frame_timestamps) > 1:
         duration = frame_timestamps[-1] - frame_timestamps[0]
         real_fps = (len(frame_timestamps) - 1) / duration
-        print(f"FPS calculado: {real_fps:.2f}")
     else:
         real_fps = 15.0  # Valor por defecto si no hay suficientes frames
     
@@ -190,7 +183,6 @@ def stop_recording_and_save():
         
         # Combinar audio y video con ffmpeg, configurando explícitamente el FPS
         try:
-            print("Combinando audio y video...")
             subprocess.run([
                 'ffmpeg', '-y',
                 '-r', f'{real_fps}',  # Especificar FPS de entrada
@@ -205,13 +197,12 @@ def stop_recording_and_save():
                 '-shortest',  # Usar la duración del stream más corto
                 file_path
             ], check=True)
-            print(f"Video con audio guardado en: {file_path}")
         except (subprocess.CalledProcessError, FileNotFoundError):
-            print("Error al combinar audio y video. FFmpeg podría no estar instalado.")
-            print(f"Los archivos temporales están disponibles en:\nVideo: {temp_video_path}\nAudio: {temp_audio_path}")
+            print("Error al combinar audio y video. FFmpeg puede no estar instalado.")
+            print(f"Los archivos temporales estan en:\nVideo: {temp_video_path}\nAudio: {temp_audio_path}")
             return
     else:
-        # Si no hay audio, usar ffmpeg para convertir el video a MP4 con el FPS correcto
+        # Si no hay audio, usar ffmpeg para convertir el video a MP4
         try:
             subprocess.run([
                 'ffmpeg', '-y',
@@ -242,7 +233,7 @@ def stop_recording_and_save():
 # Inicializar la cámara
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
-    print("Error: No se pudo abrir la cámara.")
+    print("No se pudo abrir la camara.")
     exit()
 
 # Configurar reconocedor de voz
@@ -251,9 +242,7 @@ microphone = sr.Microphone()
 
 # Ajustar para ruido ambiente y iniciar escucha en segundo plano
 with microphone as source:
-    print("Ajustando para ruido ambiente...")
     recognizer.adjust_for_ambient_noise(source)
-    print("Listo para escuchar!")
 
 stop_listening = recognizer.listen_in_background(
     microphone, 
@@ -264,7 +253,6 @@ stop_listening = recognizer.listen_in_background(
 # Crear ventana para la visualización
 cv2.namedWindow('Subtitulador en tiempo real', cv2.WINDOW_NORMAL)
 cv2.resizeWindow('Subtitulador en tiempo real', WINDOW_WIDTH, WINDOW_HEIGHT)
-print("Presiona 'r' para iniciar/detener la grabación. Presiona 'q' para salir.")
 
 try:
     while True:
@@ -314,4 +302,3 @@ finally:
     stop_listening(wait_for_stop=False)
     cap.release()
     cv2.destroyAllWindows()
-    print("Subtitulador cerrado correctamente")
