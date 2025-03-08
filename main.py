@@ -4,15 +4,36 @@ import speech_recognition as sr
 from queue import Queue
 import os
 import subprocess
+import tempfile
+import pyaudio
+import wave
+import threading
+import time
+from PyQt6.QtWidgets import QApplication, QFileDialog
+from PyQt6.QtCore import Qt
+import sys
 
 # Configuración inicial
 text_queue = Queue()
 current_text = ""
 WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600  # Increased height for camera feed
+WINDOW_HEIGHT = 600
 is_recording = False
 video_writer = None
 recorded_frames = []
+frame_timestamps = []  # Almacenar timestamps para cada frame
+
+# Configuración de audio
+CHUNK = 1024
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 44100
+audio_frames = []
+audio_thread = None
+
+# Inicializar QApplication para PyQt6
+app = QApplication.instance() or QApplication(sys.argv)
+app.setQuitOnLastWindowClosed(False)  # Evita que la app se cierre al cerrar diálogos
 
 def audio_callback(recognizer, audio):
     """Callback para procesamiento de audio en segundo plano"""
@@ -56,86 +77,167 @@ def overlay_subtitles(frame, text):
     
     return frame
 
+def record_audio():
+    """Graba audio en segundo plano mientras se graba el video"""
+    global audio_frames, is_recording
+    
+    p = pyaudio.PyAudio()
+    
+    stream = p.open(format=FORMAT,
+                    channels=CHANNELS,
+                    rate=RATE,
+                    input=True,
+                    frames_per_buffer=CHUNK)
+    
+    print("Grabando audio...")
+    
+    while is_recording:
+        data = stream.read(CHUNK)
+        audio_frames.append(data)
+    
+    print("Grabación de audio finalizada.")
+    
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
 def start_recording(frame):
-    """Inicia la grabación de video"""
-    global is_recording, recorded_frames
+    """Inicia la grabación de video y audio"""
+    global is_recording, recorded_frames, audio_frames, audio_thread, frame_timestamps
+    
     is_recording = True
-    recorded_frames = [frame.copy()]  # Iniciar con el frame actual
+    recorded_frames = [frame.copy()]
+    frame_timestamps = [time.time()]  # Registrar timestamp del primer frame
+    audio_frames = []
+    
+    # Iniciar grabación de audio en un hilo separado
+    audio_thread = threading.Thread(target=record_audio)
+    audio_thread.start()
+    
     print("Grabación iniciada. Presiona 'r' nuevamente para detener y guardar.")
 
 def stop_recording_and_save():
-    """Detiene la grabación y abre diálogo para guardar usando zenity"""
-    global is_recording, recorded_frames
+    """Detiene la grabación y abre diálogo para guardar usando PyQt6"""
+    global is_recording, recorded_frames, audio_frames, audio_thread, frame_timestamps
+    
+    # Detener la grabación
+    is_recording = False
     
     if not recorded_frames:
         print("No hay frames grabados para guardar")
-        is_recording = False
         return
     
-    # Usar zenity para mostrar el diálogo de guardar archivo
-    try:
-        # Ejecutar el comando zenity
-        result = subprocess.run([
-            'zenity', '--file-selection', 
-            '--save', 
-            '--confirm-overwrite',
-            '--title=Guardar video con subtítulos',
-            '--file-filter=*.avi',
-            '--filename=video_subtitulado.avi'
-        ], capture_output=True, text=True)
-        
-        if result.returncode != 0:  # Usuario canceló el diálogo
-            print("Guardado cancelado")
-            is_recording = False
-            recorded_frames = []
-            return
-            
-        file_path = result.stdout.strip()
-        
-        # Asegurar que tenga extensión .avi
-        if not file_path.endswith('.avi'):
-            file_path += '.avi'
-        
-        # Crear directorio si no existe
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        
-        # Configurar VideoWriter
-        height, width = recorded_frames[0].shape[:2]
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter(file_path, fourcc, 20.0, (width, height))
-        
-        # Escribir frames
-        print(f"Guardando {len(recorded_frames)} frames en {file_path}")
-        for frame in recorded_frames:
-            out.write(frame)
-        
-        # Liberar recursos
-        out.release()
-        print(f"Video guardado correctamente en: {file_path}")
-        
-    except FileNotFoundError:
-        # Zenity no está instalado, usar un nombre de archivo predeterminado
-        print("Zenity no está instalado. Guardando con nombre predeterminado.")
-        
-        home_dir = os.path.expanduser("~")
-        default_path = os.path.join(home_dir, "Videos", "video_subtitulado.avi")
-        os.makedirs(os.path.dirname(default_path), exist_ok=True)
-        
-        # Configurar VideoWriter con ruta predeterminada
-        height, width = recorded_frames[0].shape[:2]
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter(default_path, fourcc, 20.0, (width, height))
-        
-        # Escribir frames
-        for frame in recorded_frames:
-            out.write(frame)
-            
-        # Liberar recursos
-        out.release()
-        print(f"Video guardado en: {default_path}")
+    # Esperar a que termine el hilo de audio
+    if audio_thread:
+        audio_thread.join()
     
-    is_recording = False
+    # Usar PyQt6 para mostrar el diálogo de guardar archivo
+    file_path, _ = QFileDialog.getSaveFileName(
+        None,
+        "Guardar video con subtítulos",
+        os.path.expanduser("~/Videos/video_subtitulado.mp4"),
+        "Videos (*.mp4)",
+        options=QFileDialog.Option.DontUseNativeDialog
+    )
+    
+    if not file_path:  # Usuario canceló el diálogo
+        print("Guardado cancelado")
+        recorded_frames = []
+        audio_frames = []
+        frame_timestamps = []
+        return
+        
+    # Asegurar que tenga extensión .mp4
+    if not file_path.endswith('.mp4'):
+        file_path += '.mp4'
+    
+    # Crear directorio si no existe
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    
+    # Calcular el FPS real basado en timestamps
+    if len(frame_timestamps) > 1:
+        duration = frame_timestamps[-1] - frame_timestamps[0]
+        real_fps = (len(frame_timestamps) - 1) / duration
+        print(f"FPS calculado: {real_fps:.2f}")
+    else:
+        real_fps = 15.0  # Valor por defecto si no hay suficientes frames
+    
+    # Crear archivos temporales para video y audio
+    with tempfile.NamedTemporaryFile(suffix='.avi', delete=False) as temp_video_file, \
+         tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_audio_file:
+        
+        temp_video_path = temp_video_file.name
+        temp_audio_path = temp_audio_file.name
+    
+    # Guardar video temporal con FPS calculado
+    height, width = recorded_frames[0].shape[:2]
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter(temp_video_path, fourcc, real_fps, (width, height))
+    
+    for frame in recorded_frames:
+        out.write(frame)
+    
+    out.release()
+    
+    # Guardar audio temporal si hay frames de audio
+    if audio_frames:
+        wf = wave.open(temp_audio_path, 'wb')
+        wf.setnchannels(CHANNELS)
+        wf.setsampwidth(pyaudio.PyAudio().get_sample_size(FORMAT))
+        wf.setframerate(RATE)
+        wf.writeframes(b''.join(audio_frames))
+        wf.close()
+        
+        # Combinar audio y video con ffmpeg, configurando explícitamente el FPS
+        try:
+            print("Combinando audio y video...")
+            subprocess.run([
+                'ffmpeg', '-y',
+                '-r', f'{real_fps}',  # Especificar FPS de entrada
+                '-i', temp_video_path,
+                '-i', temp_audio_path,
+                '-c:v', 'libx264',
+                '-r', f'{real_fps}',  # Mantener el mismo FPS para la salida
+                '-c:a', 'aac',
+                '-strict', 'experimental',
+                '-map', '0:v:0',  # Mapear video del primer archivo
+                '-map', '1:a:0',  # Mapear audio del segundo archivo
+                '-shortest',  # Usar la duración del stream más corto
+                file_path
+            ], check=True)
+            print(f"Video con audio guardado en: {file_path}")
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("Error al combinar audio y video. FFmpeg podría no estar instalado.")
+            print(f"Los archivos temporales están disponibles en:\nVideo: {temp_video_path}\nAudio: {temp_audio_path}")
+            return
+    else:
+        # Si no hay audio, usar ffmpeg para convertir el video a MP4 con el FPS correcto
+        try:
+            subprocess.run([
+                'ffmpeg', '-y',
+                '-r', f'{real_fps}',
+                '-i', temp_video_path,
+                '-c:v', 'libx264',
+                '-r', f'{real_fps}',
+                file_path
+            ], check=True)
+            print(f"Video (sin audio) guardado en: {file_path}")
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # Si ffmpeg falla, simplemente copiar el archivo
+            os.rename(temp_video_path, file_path)
+            print(f"Video (sin audio) guardado en: {file_path}")
+    
+    # Limpiar archivos temporales
+    try:
+        os.unlink(temp_video_path)
+        if audio_frames:
+            os.unlink(temp_audio_path)
+    except:
+        pass
+    
     recorded_frames = []
+    audio_frames = []
+    frame_timestamps = []
 
 # Inicializar la cámara
 cap = cv2.VideoCapture(0)
@@ -190,6 +292,8 @@ try:
             cv2.circle(display_frame, (display_frame.shape[1] - 20, 20), 10, (0, 0, 255), -1)
             # Guardar el frame con los subtítulos
             recorded_frames.append(display_frame.copy())
+            # Registrar timestamp para este frame
+            frame_timestamps.append(time.time())
         
         # Mostrar frame con subtítulos
         cv2.imshow('Subtitulador en tiempo real', display_frame)
@@ -201,6 +305,7 @@ try:
         elif key == ord('r'):  # Iniciar/detener grabación con 'r'
             if is_recording:
                 stop_recording_and_save()
+                app.processEvents()  # Asegurar que la GUI de Qt se actualice
             else:
                 start_recording(display_frame)
 
