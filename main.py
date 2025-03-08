@@ -1,14 +1,14 @@
 import cv2
 import numpy as np
-import speech_recognition as sr
+import speech_recognition as sr # OK
 from queue import Queue
 import os
 import subprocess
 import tempfile
-import pyaudio
+import pyaudio # OK
 import wave
 import threading
-import time
+import time # OK
 from PyQt6.QtWidgets import QApplication, QFileDialog
 from PyQt6.QtCore import Qt
 import sys
