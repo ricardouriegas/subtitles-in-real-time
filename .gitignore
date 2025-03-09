@@ -1,0 +1,19 @@
+# Ignore all files generated to compile the LaTeX project
+*.aux
+*.bbl
+*.blg
+*.brf
+*.log
+*.lof
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.xdv
+*.pdf
+*.run.xml
+*blx.bib

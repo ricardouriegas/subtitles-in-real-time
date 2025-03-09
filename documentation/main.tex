@@ -1,0 +1,89 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage[spanish]{babel}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc} % Caracteres en Español (Acentos, ñs)
+\usepackage{url} % ACENTOS
+\usepackage{hyperref} % Referencias
+\usepackage{subfig}
+\usepackage{lipsum}
+\usepackage{balance} 
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\frontmatter@RRAP@format}{(}{}{}{}
+\patchcmd{\frontmatter@RRAP@format}{)}{}{}{}
+\makeatother	
+
+\usepackage[backend=bibtex,sorting=none]{biblatex}
+\setcounter{biburllcpenalty}{7000}
+\setcounter{biburlucpenalty}{8000}
+\addbibresource{references.bib}
+
+% fecha
+\usepackage{datetime}
+\newdateformat{specialdate}{
+    \twodigit{\THEDAY}-\twodigit{\THEMONTH}-\THEYEAR
+}
+\date{\specialdate\today}
+
+% la sentencia \burl en las citas... 
+\usepackage[hyphenbreaks]{breakurl}
+\renewcommand\spanishtablename{Tabla}
+\renewcommand\spanishfigurename{Figura}
+
+
+\begin{document}
+% Definitions
+\newcommand{\breite}{0.9} %  for twocolumn
+\newcommand{\RelacionFiguradoscolumnas}{0.9}
+\newcommand{\RelacionFiguradoscolumnasPuntoCinco}{0.45}
+
+%Title of paper
+\title{Reporte de Laboratorio 2 \\ Subtitulado en Tiempo Real}
+
+% Trabajo Individual
+\author{
+    \IEEEauthorblockN{
+        Ricardo Emmanuel Uriegas Ibarra\IEEEauthorrefmark{1}
+        }
+    % En caso de trabajos en equipo, poner a todos los autores 
+    % en estricto ORDEN ALFABETICO
+    %\author{\IEEEauthorblockN{Michael Shell\IEEEauthorrefmark{1},
+    %Homer Simpson\IEEEauthorrefmark{1}}
+    \IEEEauthorblockA{
+        \IEEEauthorrefmark{1}Ingeniería en Tecnologías de la Información\\
+        Universidad Politécnica de Victoria
+    }
+}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract} 
+    Dada la necesidad de 
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introducción}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Desarrollo Experimental}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Resultados}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusión}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\nocite{calcularRangos}
+\addcontentsline{toc}{section}{Referencias} 
+\printbibliography
+%\balance
+
+\end{document}
