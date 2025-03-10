@@ -33,7 +33,7 @@ audio_thread = None
 
 # Inicializar QApplication para PyQt6
 app = QApplication.instance() or QApplication(sys.argv)
-app.setQuitOnLastWindowClosed(False)  # Evita que la app se cierre al cerrar diálogos
+app.setQuitOnLastWindowClosed(False)  # evitar que la app se cierre al cerrar diálogos
 
 def audio_callback(recognizer, audio):
     """Callback para procesamiento de audio en segundo plano"""
