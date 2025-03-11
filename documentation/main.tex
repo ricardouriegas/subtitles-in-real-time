@@ -60,8 +60,8 @@
 \maketitle
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{abstract} 
-
+\begin{abstract}
+Este documento presenta el desarrollo e implementación de un sistema de subtitulado en tiempo real, cuyo objetivo es mejorar la accesibilidad para personas con discapacidad auditiva. La solución integra la captura y el procesamiento simultáneo de audio y video mediante Python, utilizando librerías como OpenCV, PyQt6, SpeechRecognition y PyAudio. Se generan simultáneamente videos con y sin subtítulos, junto a un archivo SRT para facilitar la sincronización de los subtítulos con el audio.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -78,7 +78,7 @@ En este proyecto se desarrollo un sistema de subtitulado en tiempo real en PyQt6
 Para la recolección del audio se utilizó la librería PyAudio. El flujo de trabajo inicia con la configuración del micrófono, seguida de la captura de fragmentos de audio. Posteriormente, estos fragmentos se procesan en segundo plano, y la librería SpeechRecognition se encarga de convertirlos en texto (subtítulos) en tiempo real.
 
 \subsection{Procesamiento de video}
-El video es capturado por la cámara del dispositivo mediante la librería OpenCV, el video se muestra en tiempo real en un widget de la interfaz gráfica junto a los subtítulos generados por el procesamiento de audio. Para mostrar los subtitulos junto al video se utiliza la librería Pillow que permite la superposición de texto en una imagen, la razón de esta decision sobre la librería OpenCV es que Pillow permite acentos y caracteres especiales en el texto, mientras que OpenCV pareciera no soportar estos caracteres.
+El video es capturado por la cámara del dispositivo mediante la librería OpenCV, el video se muestra en tiempo real en un widget de la interfaz gráfica junto a los subtítulos generados por el procesamiento de audio. Para mostrar los subtítulos junto al video se utiliza la librería Pillow que permite la superposición de texto en una imagen, la razón de esta decision sobre la librería OpenCV es que Pillow permite acentos y caracteres especiales en el texto, mientras que OpenCV pareciera no soportar estos caracteres.
 
 \subsection{Subtitulado en tiempo real}
 Aquí es donde el proceso de audio junto al procesamiento de video se unen. Esta combinación consiste en mostrar en tiempo real los subtítulos que se obtienen del micrófono, mientras se muestra el video dado por la cámara.
@@ -131,10 +131,12 @@ En la figura \ref{fig:default-UI} se muestra la interfaz gráfica del programa a
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusión}
-
+Con este trabajo se aporta a la solucion desarrollada para ayudar a las personas con discapacidad auditiva a disfrutar de contenido audiovisual.
+Se busco en distintas fuentes la forma de poder realizar un subtitulado en tiempo real, y se logro desarrollar un programa que cumple con el objetivo principal de mostrar en tiempo real los subtítulos que se obtienen del micrófono junto al video dado por la cámara.
+El programa posee algunos desperfectos que pueden ser mejorados, como la sincronización de los subtítulos con el audio del video, la interfaz gráfica, y la calidad de los subtítulos generados por el programa. A pesar de estos desperfectos, el programa cumple con su objetivo principal, el cual es mostrar en tiempo real los subtítulos que se obtienen del micrófono junto al video dado por la cámara.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\nocite{calcularRangos}
+\nocite{*}
 \addcontentsline{toc}{section}{Referencias} 
 \printbibliography
 %\balance
