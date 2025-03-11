@@ -109,21 +109,30 @@ def record_audio():
     
     p = pyaudio.PyAudio()
     
-    stream = p.open(format=FORMAT,
-                    channels=CHANNELS,
-                    rate=RATE,
-                    input=True,
-                    frames_per_buffer=CHUNK)
-    
-    while is_recording:
-        data = stream.read(CHUNK)
-        audio_frames.append(data)
-    
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
+    try:
+        stream = p.open(format=FORMAT,
+                        channels=CHANNELS,
+                        rate=RATE,
+                        input=True,
+                        frames_per_buffer=CHUNK)
+        
+        while is_recording:
+            try:
+                data = stream.read(CHUNK, exception_on_overflow=False)  # Evita errores de overflow
+                audio_frames.append(data)
+            except IOError as e:
+                # Manejar errores de IOError (como overflow)
+                print(f"IOError en grabación de audio: {str(e)}")
+                continue
+    except Exception as e:
+        print(f"Error al iniciar grabación de audio: {str(e)}")
+    finally:
+        if 'stream' in locals() and stream:
+            stream.stop_stream()
+            stream.close()
+        p.terminate()
 
-def generate_srt_file(subtitle_data, output_path):
+def generate_srt_file(subtitle_data, output_path, offset_seconds=1.5):
     """Genera un archivo SRT a partir de los datos de subtítulos"""
     if not subtitle_data:
         return False
@@ -136,9 +145,13 @@ def generate_srt_file(subtitle_data, output_path):
             if not text:  # Ignorar entradas sin texto
                 continue
                 
+            # Aplicar compensación para adelantar los subtítulos
+            adjusted_start = max(start_time - offset_seconds, frame_timestamps[0])
+            adjusted_end = max(end_time - offset_seconds, adjusted_start + 0.5)
+                
             # Convertir timestamps a formato SRT (HH:MM:SS,mmm)
-            start_timestamp = datetime.utcfromtimestamp(start_time - frame_timestamps[0])
-            end_timestamp = datetime.utcfromtimestamp(end_time - frame_timestamps[0])
+            start_timestamp = datetime.utcfromtimestamp(adjusted_start - frame_timestamps[0])
+            end_timestamp = datetime.utcfromtimestamp(adjusted_end - frame_timestamps[0])
             
             start_str = start_timestamp.strftime('%H:%M:%S,%f')[:12]  # Formato HH:MM:SS,mmm
             end_str = end_timestamp.strftime('%H:%M:%S,%f')[:12]      # Formato HH:MM:SS,mmm
@@ -205,7 +218,8 @@ def stop_recording_and_save():
     # Definir rutas para los archivos adicionales
     base_path = file_path[:-4]  # Eliminar extensión .mp4
     clean_video_path = f"{base_path}_clean.mp4"
-    srt_path = f"{base_path}.srt"
+    clean_base_path = clean_video_path[:-4]  # Base del nombre del video limpio sin extensión
+    srt_path = f"{clean_base_path}.srt"  # SRT con el mismo nombre que el video clean
     
     # Crear directorio si no existe
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -255,46 +269,84 @@ def stop_recording_and_save():
         
         # Generar archivo SRT con los subtítulos
         if subtitle_data:
-            generate_srt_file(subtitle_data, srt_path)
+            generate_srt_file(subtitle_data, srt_path, offset_seconds=1.6)
             print(f"Archivo SRT generado: {srt_path}")
         
-        # Combinar audio y video con subtítulos
+        # Combinar audio y video con subtítulos usando opciones mejoradas de sincronización
         try:
+            # Primero, normalizar el formato de video para mejor compatibilidad
+            temp_norm_video = tempfile.mktemp(suffix='.mp4')
+            temp_norm_clean = tempfile.mktemp(suffix='.mp4')
+            
+            # Normalizar video con subtítulos
             subprocess.run([
                 'ffmpeg', '-y',
                 '-r', f'{real_fps}',
                 '-i', temp_video_path,
-                '-i', temp_audio_path,
                 '-c:v', 'libx264',
+                '-preset', 'medium',
+                '-profile:v', 'high',
+                '-pix_fmt', 'yuv420p',
                 '-r', f'{real_fps}',
-                '-c:a', 'aac',
-                '-strict', 'experimental',
-                '-map', '0:v:0',
-                '-map', '1:a:0',
-                '-shortest',
-                file_path
+                temp_norm_video
             ], check=True)
-            print(f"Video con subtítulos guardado en: {file_path}")
             
-            # Combinar audio y video limpio (sin subtítulos)
+            # Normalizar video limpio
             subprocess.run([
                 'ffmpeg', '-y',
                 '-r', f'{real_fps}',
                 '-i', temp_clean_video_path,
-                '-i', temp_audio_path,
                 '-c:v', 'libx264',
+                '-preset', 'medium',
+                '-profile:v', 'high',
+                '-pix_fmt', 'yuv420p',
                 '-r', f'{real_fps}',
+                temp_norm_clean
+            ], check=True)
+            
+            # Combinar video con subtítulos y audio con sincronización mejorada
+            subprocess.run([
+                'ffmpeg', '-y',
+                '-i', temp_norm_video,
+                '-i', temp_audio_path,
+                '-c:v', 'copy',
                 '-c:a', 'aac',
+                '-af', 'aresample=async=1000',  # Corrige desincronización de audio
                 '-strict', 'experimental',
                 '-map', '0:v:0',
                 '-map', '1:a:0',
-                '-shortest',
+                '-vsync', 'cfr',  # Mantiene framerate constante
+                '-max_muxing_queue_size', '9999',
+                file_path
+            ], check=True)
+            print(f"Video con subtítulos guardado en: {file_path}")
+            
+            # Combinar video limpio y audio con sincronización mejorada
+            subprocess.run([
+                'ffmpeg', '-y',
+                '-i', temp_norm_clean,
+                '-i', temp_audio_path,
+                '-c:v', 'copy',
+                '-c:a', 'aac',
+                '-af', 'aresample=async=1000',  # Corrige desincronización de audio
+                '-strict', 'experimental',
+                '-map', '0:v:0',
+                '-map', '1:a:0',
+                '-vsync', 'cfr',  # Mantiene framerate constante
+                '-max_muxing_queue_size', '9999',
                 clean_video_path
             ], check=True)
             print(f"Video limpio (sin subtítulos) guardado en: {clean_video_path}")
             
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            print("Error al combinar audio y video. FFmpeg puede no estar instalado.")
+            # Limpiar archivos temporales adicionales
+            try:
+                os.unlink(temp_norm_video)
+                os.unlink(temp_norm_clean)
+            except:
+                pass
+                
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            print(f"Error al combinar audio y video: {str(e)}")
             print(f"Los archivos temporales están en:\nVideo: {temp_video_path}\nVideo limpio: {temp_clean_video_path}\nAudio: {temp_audio_path}")
             return
     else:
