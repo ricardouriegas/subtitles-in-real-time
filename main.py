@@ -319,7 +319,6 @@ def stop_recording_and_save():
                 '-max_muxing_queue_size', '9999',
                 file_path
             ], check=True)
-            print(f"Video con subtítulos guardado en: {file_path}")
             
             # Combinar video limpio y audio con sincronización mejorada
             subprocess.run([
@@ -328,7 +327,7 @@ def stop_recording_and_save():
                 '-i', temp_audio_path,
                 '-c:v', 'copy',
                 '-c:a', 'aac',
-                '-af', 'aresample=async=1000',  # Corrige desincronización de audio
+                '-af', 'aresample=async=1000',  # para la desincronización de audio
                 '-strict', 'experimental',
                 '-map', '0:v:0',
                 '-map', '1:a:0',
@@ -336,6 +335,7 @@ def stop_recording_and_save():
                 '-max_muxing_queue_size', '9999',
                 clean_video_path
             ], check=True)
+            print(f"Video con subtítulos guardado en: {file_path}")
             print(f"Video limpio (sin subtítulos) guardado en: {clean_video_path}")
             
             # Limpiar archivos temporales adicionales

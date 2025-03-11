@@ -6,10 +6,8 @@ Este programa es capaz de grabar un video usando la webcam mientras genera subt�
 
 Para ejecutar `main.py`, necesitarás instalar las siguientes dependencias:
 
-<!-- TODO: agregar las dependencias que faltan -->
-
 ```bash
-pip install numpy opencv-python SpeechRecognition pyaudio
+pip install numpy opencv-python SpeechRecognition pyaudio Pillow PyQt6
 ```
 
 También necesitarás instalar `portaudio` y `ffmpeg`:
