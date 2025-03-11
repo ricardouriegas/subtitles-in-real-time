@@ -270,7 +270,7 @@ def stop_recording_and_save():
         # Generar archivo SRT con los subtítulos
         if subtitle_data:
             generate_srt_file(subtitle_data, srt_path, offset_seconds=1.6)
-            print(f"Archivo SRT generado: {srt_path}")
+            # print(f"Archivo SRT generado: {srt_path}")
         
         # Combinar audio y video con subtítulos usando opciones mejoradas de sincronización
         try:
@@ -315,7 +315,7 @@ def stop_recording_and_save():
                 '-strict', 'experimental',
                 '-map', '0:v:0',
                 '-map', '1:a:0',
-                '-vsync', 'cfr',  # Mantiene framerate constante
+                '-vsync', 'cfr',  # para mantener un framerate constante
                 '-max_muxing_queue_size', '9999',
                 file_path
             ], check=True)
@@ -413,8 +413,8 @@ stop_listening = recognizer.listen_in_background(
 )
 
 # Crear ventana para la visualización
-cv2.namedWindow('Subtitulador en tiempo real', cv2.WINDOW_NORMAL)
-cv2.resizeWindow('Subtitulador en tiempo real', WINDOW_WIDTH, WINDOW_HEIGHT)
+cv2.namedWindow('Subtitulado en Tiempo Real', cv2.WINDOW_NORMAL)
+cv2.resizeWindow('Subtitulado en Tiempo Real', WINDOW_WIDTH, WINDOW_HEIGHT)
 
 try:
     last_subtitle_time = 0
@@ -465,7 +465,7 @@ try:
             frame_timestamps.append(time.time())
         
         # Mostrar frame con subtítulos
-        cv2.imshow('Subtitulador en tiempo real', display_frame)
+        cv2.imshow('Subtitulado en Tiempo Real', display_frame)
         
         # Comprobar teclas
         key = cv2.waitKey(1) & 0xFF
