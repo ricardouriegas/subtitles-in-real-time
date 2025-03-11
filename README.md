@@ -12,14 +12,14 @@ Para ejecutar `main.py`, necesitarás instalar las siguientes dependencias:
 pip install numpy opencv-python SpeechRecognition pyaudio
 ```
 
-También necesitarás instalar portaudio:
+También necesitarás instalar `portaudio` y `ffmpeg`:
 
 ```bash
 # Debian/Ubuntu
-sudo apt-get install portaudio19-dev
+sudo apt-get install portaudio19-dev ffmpeg
 
 # Fedora
-sudo dnf install portaudio-devel
+sudo dnf install portaudio-devel ffmpeg
 
 ```
 
@@ -35,16 +35,10 @@ sudo dnf install portaudio-devel
 ## Características
 
 - Grabación de video con subtítulos en tiempo real
-- Reconocimiento de voz en **español**
+- Reconocimiento de voz _español_
 - Los subtítulos se muestran directamente en el video mientras grabas
 - Se guarda un archivo SRT separado para usar con herramientas externas
 
-<!-- ## Incrustación de subtítulos con mejor calidad
+## Resultados
 
-El programa guarda un video con subtítulos básicos y un archivo SRT separado. Para incrustar los subtítulos con mejor calidad, puedes usar ffmpeg manualmente:
-
-```bash
-ffmpeg -i video_grabado.mp4 -vf "subtitles=video_grabado.srt:force_style=FontName='LiberationSans-Regular,PrimaryColour=&H0000FF00'" video_final.mp4
-```
-
-Este comando creará un nuevo video con subtítulos en verde y una mejor apariencia. -->
+El programa guarda un video con subtítulos básicos, un video sin subtítulos y un archivo SRT.

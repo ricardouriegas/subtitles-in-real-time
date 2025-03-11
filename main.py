@@ -1,21 +1,20 @@
-import cv2
-import numpy as np
+import cv2 # OK
+import numpy as np # OK
 import speech_recognition as sr # OK
-from queue import Queue
-import os
-import subprocess
+from queue import Queue # for text_queue
+import os # OK
+import subprocess # for ffmpeg (combining audio and video)
 import tempfile
 import pyaudio # OK
-import wave
-import threading
+import wave # for audio recording
+import threading # for the audio thread 
 import time # OK
-from PyQt6.QtWidgets import QApplication, QFileDialog
-from PyQt6.QtCore import Qt
-import sys
-from PIL import Image, ImageDraw, ImageFont  # Added for Unicode text support
-from datetime import datetime, timedelta
+from PyQt6.QtWidgets import QApplication, QFileDialog # OK
+import sys # for sys.exit
+from PIL import Image, ImageDraw, ImageFont  # for Unicode text support
+from datetime import datetime # for SRT timestamps
 
-# Configuración inicial
+# configuración del programa
 text_queue = Queue()
 current_text = ""
 WINDOW_WIDTH = 800
@@ -23,11 +22,11 @@ WINDOW_HEIGHT = 600
 is_recording = False
 video_writer = None
 recorded_frames = []
-clean_frames = []  # Frames sin subtítulos
-frame_timestamps = []  # Almacenar timestamps para cada frame
-subtitle_data = []  # Lista para almacenar datos de subtítulos (texto, tiempo inicio, tiempo fin)
+clean_frames = []  # frames sin subtítulos
+frame_timestamps = []  # almacenar timestamps para cada frame
+subtitle_data = []  # para almacenar datos de subtítulos (texto, tiempo inicio, tiempo fin)
 
-# Configuración de audio
+# configuración de audio
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
@@ -260,11 +259,12 @@ def stop_recording_and_save():
     
     # Guardar audio temporal si hay frames de audio
     if audio_frames:
+        # uUsar wave para guardar el archivo de audio
         wf = wave.open(temp_audio_path, 'wb')
         wf.setnchannels(CHANNELS)
         wf.setsampwidth(pyaudio.PyAudio().get_sample_size(FORMAT))
         wf.setframerate(RATE)
-        wf.writeframes(b''.join(audio_frames))
+        wf.writeframes(b''.join(audio_frames)) # unir los frames de audio en uno solo y escribirlo en el archivo de audio temporal
         wf.close()
         
         # Generar archivo SRT con los subtítulos
